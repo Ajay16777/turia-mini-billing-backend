@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES6",                        // Specify the target ECMAScript version
+    "module": "CommonJS",                   // Specify the module system (e.g., CommonJS, ESNext)
+    "outDir": "./dist",                     // Output directory for compiled files
+    "rootDir": "./src",                    // Root directory of TypeScript source files
+    "strict": true,                         // Enable strict type checking
+    "esModuleInterop": true,                // Enable compatibility with ES modules
+    "skipLibCheck": true,                   // Skip type checking of declaration files
+    "forceConsistentCasingInFileNames": true, // Enforce consistent file casing
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "resolveJsonModule": true
+  },
+  "exclude": [
+    "node_modules",
+    "**/*.spec.ts"
+  ]               // Specify which files or directories to exclude
+}
