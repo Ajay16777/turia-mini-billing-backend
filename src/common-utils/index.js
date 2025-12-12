@@ -2,9 +2,10 @@ import * as logger from './logger.js';
 import * as errorUtils from './errorHandler.js';
 import * as config from './config.js';
 import constants from './constants.js';
-import RequestResponseHandler from './req-res-handler.js';
+import RequestResponseHandler from './middlewares/req-res-handler.js';
 import * as commonHelper from './helpers.js';
 import PostgreSQLConnection from './databases/postgres/connection.js';
+import * as auth from './middlewares/auth.middleware.js';
 
 export default {
     logger,
@@ -13,5 +14,6 @@ export default {
     constants,
     RequestResponseHandler,
     commonHelper,
-    PostgreSQLConnection
+    PostgreSQLConnection,
+    auth
 };

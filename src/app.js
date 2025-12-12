@@ -6,8 +6,10 @@ import commonUtils from './common-utils/index.js';
 
 dotenv.config(); // Load environment variables
 
-const { logger, errorUtils, RequestResponseHandler, PostgreSQLConnection } = commonUtils;
+const { logger, errorUtils, RequestResponseHandler, PostgreSQLConnection, auth } = commonUtils;
+console.log("🚀 ~ auth:", auth)
 const errorHandler = new errorUtils.ErrorHandler();
+import { invoiceRoutes } from './routes/index.js';
 
 /**
  * Represents a basic application setup for a web server.
@@ -50,6 +52,7 @@ class MyApp {
         this.app.get('/api/healthchecker', (req, res) => {
             res.send('Hello World');
         });
+        invoiceRoutes(this.app);
 
         // userManagementRoutes(this.app);
     }
