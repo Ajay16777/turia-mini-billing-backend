@@ -1,9 +1,8 @@
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import * as dotenv from 'dotenv'; // Use dotenv for environment variables
-import commonUtils from './modules/common-utils';
-import { userManagementRoutes } from './modules/user/router';
+import * as dotenv from 'dotenv';
+import commonUtils from './common-utils/index.js';
 
 dotenv.config(); // Load environment variables
 
@@ -14,8 +13,6 @@ const errorHandler = new errorUtils.ErrorHandler();
  * Represents a basic application setup for a web server.
  */
 class MyApp {
-    private app: express.Application;
-
     constructor() {
         this.app = express();
         this.setupDbConnection();
@@ -26,18 +23,20 @@ class MyApp {
     /**
      * Set up the database connection.
      */
-    private setupDbConnection() {
-        PostgreSQLConnection.connect().then(() => {
-            logger.info('Database connection established');
-        }).catch((error: any) => {
-            logger.error({}, 'Database connection failed', error);
-        });
+    setupDbConnection() {
+        PostgreSQLConnection.connect()
+            .then(() => {
+                logger.info('Database connection established');
+            })
+            .catch((error) => {
+                logger.error({}, 'Database connection failed', error);
+            });
     }
 
     /**
      * Set up middleware for the application.
      */
-    private setupMiddleware() {
+    setupMiddleware() {
         this.app.use(express.json({ limit: '10kb' }));
         this.app.use(cookieParser());
         this.app.use(cors());
@@ -47,20 +46,21 @@ class MyApp {
     /**
      * Define the routes for the application.
      */
-    private setupRoutes() {
+    setupRoutes() {
         this.app.get('/api/healthchecker', (req, res) => {
             res.send('Hello World');
         });
-        userManagementRoutes(this.app);
+
+        // userManagementRoutes(this.app);
     }
 
     /**
      * Start the web server.
      */
-    public startServer() {
-        const port = process.env.PORT; // Use environment variable for the port
+    startServer() {
+        const port = process.env.PORT || 8000; // fallback port
         this.app.listen(port, () => {
-            logger.info(`Server is Running on Port ${port}`);
+            logger.info(`Server is running on port ${port}`);
         });
     }
 }
@@ -68,17 +68,17 @@ class MyApp {
 const myApp = new MyApp();
 myApp.startServer();
 
-// Handle unhandled rejections
-process.on('unhandledRejection', (reas̵on: Error) => {
-    logger.error({}, `Unhandled Rejection: ${reas̵on.message}`, {
-        err: reas̵on,
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason) => {
+    logger.error({}, `Unhandled Rejection: ${reason.message}`, {
+        err: reason,
         tags: [],
     });
     process.exit(1);
 });
 
 // Handle uncaught exceptions
-process.on('uncaughtException', (error: Error) => {
+process.on('uncaughtException', (error) => {
     logger.error({}, `Uncaught Exception: ${error.message}`, {
         err: error,
         tags: [],
