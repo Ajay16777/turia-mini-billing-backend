@@ -41,7 +41,7 @@ const postgreSQLConfig = {
     POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD || 'password123',
     POSTGRES_DB: process.env.POSTGRES_DB || 'node_typeorm',
     RETRY_INTERVAL: parseNumber(process.env.RETRY_INTERVAL, 5000),
-    MAX_RETRES: parseNumber(process.env.MAX_RETRES, 5),
+    MAX_RETRIES: parseNumber(process.env.MAX_RETRIES, 5),
 };
 
 /* ------------------------- ADDITIONAL CONFIG ------------------------ */
@@ -49,8 +49,8 @@ const additionalConfig = {};
 
 /* --------------------------- TOKEN CONFIG --------------------------- */
 const tokenConfig = {
-    SIGNIN_TOKEN_SECRET: process.env.SIGNIN_TOKEN_SECRET || 'SIGNIN_TOKEN_SECRET',
-    LOGIN_TOKEN_SECRET: process.env.LOGIN_TOKEN_SECRET || 'LOGIN_TOKEN_SECRET',
+    JWT_SECRET: process.env.JWT_SECRET || 'JWT_SECRET',
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1d',
 };
 
 /* ----------------------------- EXPORTS ----------------------------- */

@@ -4,7 +4,7 @@ const { InternalServerError, ValidationError } = errorUtils;
 
 
 // Create Invoice
-export const createInvoiceController = async (req, res) => {
+const createInvoiceController = async (req, res) => {
     const body = req.requestDetails.requestBody;
     try {
         // const invoice = await invoiceService.createInvoice(body);
@@ -16,7 +16,7 @@ export const createInvoiceController = async (req, res) => {
 };
 
 // Get all invoices (with optional filters)
-export const getInvoicesController = async (req, res) => {
+const getInvoicesController = async (req, res) => {
     const body = req.requestDetails.requestBody;
     try {
         // const invoices = await invoiceService.getInvoices(body);
@@ -28,7 +28,7 @@ export const getInvoicesController = async (req, res) => {
 };
 
 // Get single invoice
-export const getInvoiceController = async (req, res) => {
+const getInvoiceController = async (req, res) => {
     const body = req.requestDetails.requestBody;
     try {
         // const invoice = await invoiceService.getInvoice(body);
@@ -40,7 +40,7 @@ export const getInvoiceController = async (req, res) => {
 };
 
 // Update invoice status
-export const updateInvoiceStatusController = async (req, res) => {
+const updateInvoiceStatusController = async (req, res) => {
     const body = req.requestDetails.requestBody;
     try {
         // const updatedInvoice = await invoiceService.updateInvoiceStatus(body);

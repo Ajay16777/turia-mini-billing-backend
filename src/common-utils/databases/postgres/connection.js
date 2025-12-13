@@ -2,90 +2,48 @@ import { Sequelize } from 'sequelize';
 import { postgreSQLConfig } from '../../config.js';
 import * as logger from '../../logger.js';
 
-const tags = ['postgres_connection'];
-
 const {
 	POSTGRES_DB,
 	POSTGRES_USER,
 	POSTGRES_PASSWORD,
 	POSTGRES_HOST,
 	POSTGRES_PORT,
-	MAX_RETRES,
+	MAX_RETRIES,
 	RETRY_INTERVAL
 } = postgreSQLConfig;
 
-class PostgresConnection {
-	constructor() {
-		this.maxRetries = MAX_RETRES || 5;
-		this.retryDelay = RETRY_INTERVAL || 2000;
-		this.sequelize = null;
-		this.retryCount = 0;
-	}
+const tags = ['postgres_connection'];
 
-	/**
-	 * Establish the connection with retry logic.
-	 */
-	async connect() {
-		if (this.sequelize) return this.sequelize;
+const sequelize = new Sequelize(POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, {
+	host: POSTGRES_HOST,
+	port: POSTGRES_PORT,
+	dialect: 'postgres',
+	logging: false,
+	pool: { max: 10, min: 0, acquire: 30000, idle: 10000 },
+	define: { freezeTableName: true, timestamps: false }, // timestamps handled in model
+});
 
-		while (this.retryCount < this.maxRetries) {
-			try {
-				this.sequelize = new Sequelize(POSTGRES_DB, POSTGRES_USER, POSTGRES_PASSWORD, {
-					host: POSTGRES_HOST,
-					port: POSTGRES_PORT,
-					dialect: 'postgres',
-					logging: false,
-					pool: {
-						max: 10,
-						min: 0,
-						acquire: 30000,
-						idle: 10000
-					},
-					define: {
-						freezeTableName: true,
-						timestamps: true
-					}
-				});
+const connect = async () => {
+	let retries = 0;
+	while (retries < (MAX_RETRIES || 5)) {
+		try {
+			await sequelize.authenticate();
+			logger.info('✅ Connected to PostgreSQL successfully', tags);
+			return sequelize;
+		} catch (error) {
+			retries++;
+			logger.error({}, `PostgreSQL connection failed (Attempt ${retries}). ${error.message}`, { tags });
 
-				await this.sequelize.authenticate();
-				logger.info('Connected to PostgreSQL successfully.', tags);
-
-				return this.sequelize;
-
-			} catch (error) {
-				this.retryCount++;
-
-				logger.error(
-					{},
-					`PostgreSQL connection failed (Attempt ${this.retryCount}/${this.maxRetries}). Error: ${error.message}`
-				);
-
-				if (this.retryCount < this.maxRetries) {
-					const delaySec = this.retryDelay / 1000;
-					logger.info(`Retrying in ${delaySec} seconds...`, tags);
-					await new Promise(res => setTimeout(res, this.retryDelay));
-				} else {
-					logger.error({}, `Max retries reached. Unable to connect to PostgreSQL.`);
-					throw error;
-				}
+			if (retries < (MAX_RETRIES || 5)) {
+				logger.info(`Retrying in ${RETRY_INTERVAL || 2000} ms...`, tags);
+				await new Promise(res => setTimeout(res, RETRY_INTERVAL || 2000));
+			} else {
+				logger.error({}, 'Max retries reached. Cannot connect to PostgreSQL.', { tags });
+				throw error;
 			}
 		}
-
-		throw new Error('Unexpected flow in connect() logic');
 	}
+};
 
-	/**
-	 * Return Sequelize instance.
-	 */
-	getSequelizeInstance() {
-		if (!this.sequelize) {
-			console.log('Sequelize connection is not established yet...');
-			return null;
-		}
-		return this.sequelize;
-	}
-}
-
-// Export an instance using ES module syntax
-const postgresConnection = new PostgresConnection();
-export default postgresConnection;
+export { sequelize, connect };
+export default sequelize;

@@ -110,19 +110,61 @@ class AuthTokenError extends APIError {
     }
 }
 
-/**
- * Error handler class
- */
 class ErrorHandler {
-    async handleError(err) {
-        logger.error({}, 'Error message from the centralized error-handling component', { tags: [], err });
+    async handleError(err, req, res) {
+        const normalizedError = this.normalizeError(err);
+
+        logger.error(
+            {
+                err: normalizedError.originalError,
+                tags: ['central-error-handler'],
+            },
+            normalizedError.message
+        );
+
+        res.status(normalizedError.httpCode).json({
+            success: false,
+            type: normalizedError.type,
+            message: normalizedError.message,
+            errors: normalizedError.errors || null,
+        });
+    }
+
+    normalizeError(err) {
+        // Custom API errors
+        if (err instanceof BaseError) {
+            return {
+                type: err.type,
+                message: err.message,
+                httpCode: err.httpCode,
+                errors: err.errors || null,
+                originalError: err.error || err,
+            };
+        }
+
+        // Native JS Error
+        if (err instanceof Error) {
+            return {
+                type: 'InternalServerError',
+                message: err.message || 'Internal server error',
+                httpCode: HttpStatusCode.INTERNAL_SERVER,
+                errors: null,
+                originalError: err,
+            };
+        }
+
+        // Unknown error shape
+        return {
+            type: 'UnknownError',
+            message: 'Something went wrong',
+            httpCode: HttpStatusCode.INTERNAL_SERVER,
+            errors: null,
+            originalError: err,
+        };
     }
 
     isTrustedError(error) {
-        if (error instanceof BaseError) {
-            return error.isOperational;
-        }
-        return false;
+        return error instanceof BaseError && error.isOperational;
     }
 }
 

@@ -28,9 +28,34 @@ const pickKeysFromObj = (obj, ...keysToPick) => {
     );
 };
 
+import { ValidationError } from './errorHandler.js';
+
+/**
+ * Common Joi validation handler
+ */
+const validateWithJoi = (schema, payload) => {
+    const { error, value } = schema.validate(payload, {
+        abortEarly: false, // collect all errors
+        stripUnknown: true, // remove unknown fields
+    });
+
+    if (error) {
+        const errors = error.details.map((detail) => ({
+            field: detail.path.join('.'),
+            message: detail.message,
+        }));
+
+        throw new ValidationError(errors);
+    }
+
+    return value;
+};
+
+
 export {
     parseNumber,
     parseCSV,
     isNonEmptyArray,
-    pickKeysFromObj
+    pickKeysFromObj,
+    validateWithJoi
 };

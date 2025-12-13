@@ -4,8 +4,9 @@ import * as config from './config.js';
 import constants from './constants.js';
 import RequestResponseHandler from './middlewares/req-res-handler.js';
 import * as commonHelper from './helpers.js';
-import PostgreSQLConnection from './databases/postgres/connection.js';
+import * as PostgreSQLConnection from './databases/postgres/connection.js';
 import * as auth from './middlewares/auth.middleware.js';
+import * as postgreModels from './databases/postgres/index.js';
 
 export default {
     logger,
@@ -15,5 +16,6 @@ export default {
     RequestResponseHandler,
     commonHelper,
     PostgreSQLConnection,
-    auth
+    auth,
+    postgreModels
 };

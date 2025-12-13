@@ -3,40 +3,54 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import commonUtils from './common-utils/index.js';
+import { authRoutes } from './routes/index.js';
 
 dotenv.config(); // Load environment variables
 
-const { logger, errorUtils, RequestResponseHandler, PostgreSQLConnection, auth } = commonUtils;
-console.log("🚀 ~ auth:", auth)
-const errorHandler = new errorUtils.ErrorHandler();
-import { invoiceRoutes } from './routes/index.js';
+const {
+    logger,
+    errorUtils,
+    RequestResponseHandler,
+    PostgreSQLConnection,
+} = commonUtils;
 
-/**
- * Represents a basic application setup for a web server.
- */
+const errorHandler = new errorUtils.ErrorHandler();
+
 class MyApp {
     constructor() {
         this.app = express();
-        this.setupDbConnection();
         this.setupMiddleware();
         this.setupRoutes();
+        this.setupErrorHandling();
     }
 
     /**
-     * Set up the database connection.
+     * Async initializer to wait for DB connection
      */
-    setupDbConnection() {
-        PostgreSQLConnection.connect()
-            .then(() => {
-                logger.info('Database connection established');
-            })
-            .catch((error) => {
-                logger.error({}, 'Database connection failed', error);
-            });
+    async init() {
+        await this.setupDbConnection();
+        return this;
     }
 
     /**
-     * Set up middleware for the application.
+     * Set up the database connection
+     */
+    async setupDbConnection() {
+        try {
+            await PostgreSQLConnection.connect();
+            logger.info('Database connection established');
+        } catch (error) {
+            console.log("🚀 ~ MyApp ~ setupDbConnection ~ error:", error)
+            logger.error({}, 'Database connection failed', {
+                err: error,
+                tags: ['db'],
+            });
+            process.exit(1);
+        }
+    }
+
+    /**
+     * Set up middleware
      */
     setupMiddleware() {
         this.app.use(express.json({ limit: '10kb' }));
@@ -46,46 +60,60 @@ class MyApp {
     }
 
     /**
-     * Define the routes for the application.
+     * Set up routes
      */
     setupRoutes() {
         this.app.get('/api/healthchecker', (req, res) => {
-            res.send('Hello World');
+            res.status(200).send('OK');
         });
-        invoiceRoutes(this.app);
-
+        authRoutes(this.app);
+        // invoiceRoutes(this.app);
         // userManagementRoutes(this.app);
     }
 
     /**
-     * Start the web server.
+     * Centralized error handling middleware
+     */
+    setupErrorHandling() {
+        this.app.use((err, req, res, next) => {
+            errorHandler.handleError(err, req, res);
+        });
+    }
+
+    /**
+     * Start server
      */
     startServer() {
-        const port = process.env.PORT || 8000; // fallback port
+        const port = process.env.PORT || 8000;
         this.app.listen(port, () => {
             logger.info(`Server is running on port ${port}`);
         });
     }
 }
 
-const myApp = new MyApp();
-myApp.startServer();
+// Bootstrapping
+(async () => {
+    const myApp = new MyApp();
+    await myApp.init(); // wait for DB connection
+    myApp.startServer();
+})();
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (reason) => {
-    logger.error({}, `Unhandled Rejection: ${reason.message}`, {
+    logger.error({}, 'Unhandled Rejection', {
         err: reason,
-        tags: [],
+        tags: ['process'],
     });
     process.exit(1);
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-    logger.error({}, `Uncaught Exception: ${error.message}`, {
+    logger.error({}, 'Uncaught Exception', {
         err: error,
-        tags: [],
+        tags: ['process'],
     });
+
     if (!errorHandler.isTrustedError(error)) {
         process.exit(1);
     }
