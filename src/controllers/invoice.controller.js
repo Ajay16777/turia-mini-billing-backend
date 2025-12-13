@@ -1,52 +1,56 @@
 import commonUtils from '../common-utils/index.js';
-const { logger, errorUtils, RequestResponseHandler: rrHandler } = commonUtils;
-const { InternalServerError, ValidationError } = errorUtils;
+const { RequestResponseHandler: rrHandler } = commonUtils;
+import * as invoiceService from '../services/invoice-services/invoice-service.js';
 
-
-// Create Invoice
-const createInvoiceController = async (req, res) => {
-    const body = req.requestDetails.requestBody;
+/**
+ * Create Invoice Controller
+ * POST /v0/invoices/create
+ * Access: Admin only
+ */
+const createInvoiceController = async (req, res, next) => {
+    const data = req.requestDetails.requestBody;
     try {
-        // const invoice = await invoiceService.createInvoice(body);
-        const invoice = {}
+        const invoice = await invoiceService.createInvoice(data);
         return rrHandler.sendSuccessResponse(res, invoice, 201);
     } catch (err) {
-        return rrHandler.sendErrorResponse(res, err instanceof ValidationError ? err : new InternalServerError(err.message));
+        next(err);
     }
 };
 
-// Get all invoices (with optional filters)
-const getInvoicesController = async (req, res) => {
-    const body = req.requestDetails.requestBody;
+/**
+ * Get Invoices Controller
+ * POST /v0/invoices/get
+ * Access:
+ *  - Admin: all invoices
+ *  - Customer: own invoices only
+ */
+const getInvoicesController = async (req, res, next) => {
+    const data = req.requestDetails.requestBody;
     try {
-        // const invoices = await invoiceService.getInvoices(body);
-        const invoices = [];
+        const invoices = await invoiceService.getInvoices(data);
         return rrHandler.sendSuccessResponse(res, invoices);
     } catch (err) {
-        return rrHandler.sendErrorResponse(res, new InternalServerError(err.message));
+        next(err);
     }
 };
 
-// Get single invoice
-const getInvoiceController = async (req, res) => {
-    const body = req.requestDetails.requestBody;
+/**
+ * Update Invoice Status Controller
+ * POST /v0/invoices/update
+ * Access: Admin only
+ */
+const updateInvoiceStatusController = async (req, res, next) => {
+    const data = req.requestDetails.requestBody;
     try {
-        // const invoice = await invoiceService.getInvoice(body);
-        const invoice = {};
-        return rrHandler.sendSuccessResponse(res, invoice);
-    } catch (err) {
-        return rrHandler.sendErrorResponse(res, new InternalServerError(err.message));
-    }
-};
-
-// Update invoice status
-const updateInvoiceStatusController = async (req, res) => {
-    const body = req.requestDetails.requestBody;
-    try {
-        // const updatedInvoice = await invoiceService.updateInvoiceStatus(body);
-        const updatedInvoice = {};
+        const updatedInvoice = await invoiceService.updateInvoiceStatus(data);
         return rrHandler.sendSuccessResponse(res, updatedInvoice);
     } catch (err) {
-        return rrHandler.sendErrorResponse(res, new InternalServerError(err.message));
+        next(err);
     }
+};
+
+export {
+    createInvoiceController,
+    getInvoicesController,
+    updateInvoiceStatusController,
 };

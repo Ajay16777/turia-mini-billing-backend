@@ -3,7 +3,7 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import * as dotenv from 'dotenv';
 import commonUtils from './common-utils/index.js';
-import { authRoutes, customerRoutes } from './routes/index.js';
+import { authRoutes, customerRoutes, invoiceRoutes } from './routes/index.js';
 
 dotenv.config(); // Load environment variables
 
@@ -67,7 +67,7 @@ class MyApp {
         });
         authRoutes(this.app);
         customerRoutes(this.app);
-        // userManagementRoutes(this.app);
+        invoiceRoutes(this.app);
     }
 
     /**

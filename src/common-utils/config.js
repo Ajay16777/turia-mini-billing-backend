@@ -49,8 +49,8 @@ const additionalConfig = {};
 
 /* --------------------------- TOKEN CONFIG --------------------------- */
 const tokenConfig = {
-    JWT_SECRET: process.env.JWT_SECRET || 'JWT_SECRET',
-    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '1d',
+    JWT_SECRET: process.env.JWT_ACCESS_TOKEN_SECRET || 'JWT_SECRET',
+    JWT_EXPIRES_IN: process.env.JWT_EXPIRY || '1d',
 };
 
 /* ----------------------------- EXPORTS ----------------------------- */

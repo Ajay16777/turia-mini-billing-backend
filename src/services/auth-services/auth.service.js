@@ -14,7 +14,7 @@ const { userRepo } = postgreModels;
  * @returns {Object} user info + JWT token
  */
 const login = async (payload) => {
-    // 1️⃣ Validate input (throws ValidationError automatically)
+    // Validate input (throws ValidationError automatically)
     const { email, password } = validateLogin(payload);
 
     // 2️⃣ Find user
@@ -28,13 +28,13 @@ const login = async (payload) => {
 
     user = user[0];
 
-    // 3️⃣ Verify password
+    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         throw new UnauthorizedError(errorMessages.AUTH.INVALID_CREDENTIALS);
     }
 
-    // 4️⃣ Generate JWT
+    // Generate JWT
     const token = generateAccessToken({
         userId: user.id,
         email: user.email,

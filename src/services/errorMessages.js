@@ -29,6 +29,22 @@ const errorMessages = {
         ALREADY_EXISTS: 'User with this email or phone already exists',
     },
 
+    INVOICE: {
+        CUSTOMER_REQUIRED: 'Customer ID is required',
+        CUSTOMER_INVALID: 'Customer ID is invalid',
+        GST_REQUIRED: 'GST percentage is required',
+        GST_INVALID: 'GST percentage is invalid',
+        ITEMS_REQUIRED: 'At least one invoice item is required',
+        ITEM_DESC_REQUIRED: 'Item description is required',
+        ITEM_AMOUNT_REQUIRED: 'Item amount is required',
+        ITEM_AMOUNT_INVALID: 'Item amount must be greater than 0',
+        INVOICE_ID_REQUIRED: 'Invoice ID is required',
+        INVOICE_ID_INVALID: 'Invoice ID is invalid',
+        STATUS_REQUIRED: 'Invoice status is required',
+        STATUS_INVALID: 'Invoice status is invalid',
+        NOT_FOUND: 'Invoice not found',
+        INVALID_PAYLOAD: 'Invalid invoice payload',
+    },
 };
 
 export default errorMessages;

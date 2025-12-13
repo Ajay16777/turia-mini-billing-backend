@@ -14,7 +14,7 @@ const { userRepo } = postgreModels;
  * @returns {Object} created customer
  */
 const createCustomer = async (payload) => {
-    // 1️⃣ Validate input
+    // Validate input
     const userData = validateCreateUser(payload);
 
     const existingUser = await userRepo.findByEmailOrPhone(userData.email, userData.phone);
@@ -24,14 +24,14 @@ const createCustomer = async (payload) => {
         throw new ValidationError(errorMessages.USER.ALREADY_EXISTS);
     }
 
-    // 3️⃣ Hash password
+    // Hash password
     const saltRounds = 10;
     userData.password = await bcrypt.hash(userData.password, saltRounds);
 
-    // 4️⃣ Set default role
+    // Set default role
     userData.role = constants.ROLES.CUSTOMER;
 
-    // 5️⃣ Create user
+    // Create user
     const newUser = await userRepo.create(userData);
 
     return newUser;
@@ -43,10 +43,10 @@ const createCustomer = async (payload) => {
  * @returns {Array} list of customers
  */
 const fetchCustomers = async (payload) => {
-    // 1️⃣ Validate query params
+    // Validate query params
     const filters = validateFetchUsers(payload);
 
-    // 2️⃣ Fetch customers
+    // Fetch customers
     filters.role = constants.ROLES.CUSTOMER;
     const attributes = ['id', 'name', 'email', 'phone']
     const customers = await userRepo.findAll({ filters, attributes });

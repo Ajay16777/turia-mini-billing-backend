@@ -1,3 +1,6 @@
+import { ValidationError } from './errorHandler.js';
+import Joi from 'joi';
+
 const parseNumber = (value, defaultValue) => {
     const num = parseInt(value, 10);
     return Number.isNaN(num) ? defaultValue : num;
@@ -28,24 +31,30 @@ const pickKeysFromObj = (obj, ...keysToPick) => {
     );
 };
 
-import { ValidationError } from './errorHandler.js';
-
 /**
  * Common Joi validation handler
+ * - Allows only schema-defined keys
+ * - Always allows `currentUser`
  */
-const validateWithJoi = (schema, payload) => {
-    const { error, value } = schema.validate(payload, {
-        abortEarly: false, // collect all errors
+const validateWithJoi = (schema, payload = {}) => {
+    const finalSchema = schema
+        .keys({
+            currentUser: Joi.object().optional().allow(null),
+        })
+        .unknown(false);
+
+    const { error, value } = finalSchema.validate(payload, {
+        abortEarly: false,
         stripUnknown: false, // remove unknown fields
     });
 
     if (error) {
-        const errors = error.details.map((detail) => ({
-            field: detail.path.join('.'),
-            message: detail.message,
-        }));
-
-        throw new ValidationError(errors);
+        throw new ValidationError(
+            error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+            }))
+        );
     }
 
     return value;

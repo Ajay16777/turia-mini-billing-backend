@@ -1,31 +1,28 @@
-import { postgreSQLConfig as config } from '../../config.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-const {
-	POSTGRES_DB,
-	POSTGRES_USER,
-	POSTGRES_PASSWORD,
-	POSTGRES_HOST,
-	POSTGRES_PORT,
-	MAX_RETRES,
-	RETRY_INTERVAL
-} = config;
+const parseNumber = (value, defaultValue) => {
+	const num = parseInt(value, 10);
+	const res = Number.isNaN(num) ? defaultValue : num;
+	return res;
+};
 
 const dbConfig = {
 	development: {
-		username: POSTGRES_USER,
-		password: POSTGRES_PASSWORD,
-		database: POSTGRES_DB,
-		host: POSTGRES_HOST,
-		port: POSTGRES_PORT,
+		username: process.env.POSTGRES_USER || 'admin',
+		password: process.env.POSTGRES_PASSWORD || 'password123',
+		database: process.env.POSTGRES_DB || 'node_typeorm',
+		host: process.env.POSTGRES_HOST || '127.0.0.1',
+		port: parseNumber(process.env.POSTGRES_PORT, 6500),
 		dialect: 'postgres'
 	},
 
 	production: {
-		username: POSTGRES_USER,
-		password: POSTGRES_PASSWORD,
-		database: POSTGRES_DB,
-		host: POSTGRES_HOST,
-		port: POSTGRES_PORT,
+		username: process.env.POSTGRES_USER || 'admin',
+		password: process.env.POSTGRES_PASSWORD || 'password123',
+		database: process.env.POSTGRES_DB || 'node_typeorm',
+		host: process.env.POSTGRES_HOST || '127.0.0.1',
+		port: parseNumber(process.env.POSTGRES_PORT, 6500),
 		dialect: 'postgres'
 	}
 };

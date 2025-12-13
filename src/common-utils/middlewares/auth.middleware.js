@@ -23,6 +23,20 @@ export const authenticate = (req, res, next) => {
 };
 
 export const authorize = (roles = []) => (req, res, next) => {
-    if (!roles.includes(req.user.role)) return next(new UnauthorizedError('Forbidden'));
+    // Safely extract currentUser
+    const currentUser = req?.requestDetails?.requestBody?.currentUser;
+
+    // If user is not present
+    if (!currentUser) {
+        return next(new UnauthorizedError('Unauthorized'));
+    }
+
+    // If roles are defined and user role is not allowed
+    if (Array.isArray(roles) && roles.length > 0) {
+        if (!roles.includes(currentUser.role)) {
+            return next(new UnauthorizedError('Forbidden'));
+        }
+    }
+
     next();
 };
