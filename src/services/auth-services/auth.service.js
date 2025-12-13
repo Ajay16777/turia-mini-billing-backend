@@ -4,7 +4,7 @@ import { validateLogin } from './auth.validation.js';
 import errorMessages from '../errorMessages.js';
 import { generateAccessToken } from './auth.helper.js';
 
-const { errorUtils, postgreModels } = commonUtils;
+const { errorUtils, postgreModels, commonHelper } = commonUtils;
 const { UnauthorizedError } = errorUtils;
 const { userRepo } = postgreModels;
 
@@ -18,14 +18,15 @@ const login = async (payload) => {
     const { email, password } = validateLogin(payload);
 
     // 2️⃣ Find user
-    const user = await userRepo.findOne({
-        where: { email },
-        attributes: ['id', 'name', 'email', 'phone', 'role', 'password'],
-    });
+    const filters = { email }
+    const attributes = ['id', 'name', 'email', 'phone', 'role', 'password']
+    let user = await userRepo.findAll({ filters, attributes });
 
-    if (!user) {
+    if (!commonHelper.isNonEmptyArray(user)) {
         throw new UnauthorizedError(errorMessages.AUTH.INVALID_CREDENTIALS);
     }
+
+    user = user[0];
 
     // 3️⃣ Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password);

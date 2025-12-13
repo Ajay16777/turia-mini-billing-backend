@@ -1,70 +1,85 @@
 import User from '../models/user.model.js';
+import { DatabaseError } from '../../../errorHandler.js';
 
 class UserRepository {
     /**
      * Create a new user
      */
     async create(data, transaction = null) {
-        return User.create(data, { transaction });
+        try {
+            return await User.create(data, { transaction });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 
     /**
      * Update an existing user
      */
     async update(id, data, transaction = null) {
-        const user = await User.findByPk(id);
-        if (!user) return null;
+        try {
+            const user = await User.findByPk(id);
+            if (!user) return null;
 
-        return user.update(data, { transaction });
+            return await user.update(data, { transaction });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 
     /**
      * Find a single user by conditions
      */
     async findOne(where = {}, attributes = null) {
-        return User.findOne({
-            where,
-            attributes,
-        });
+        console.log("🚀 ~ UserRepository ~ findOne ~ where:", where)
+        try {
+            return await User.findOne({ where, attributes });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 
     /**
      * Find a user by primary key
      */
     async findById(id, attributes = null) {
-        return User.findByPk(id, { attributes });
+        try {
+            return await User.findByPk(id, { attributes });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 
     /**
      * Find multiple users with filtering, pagination, sorting
-     * @param {Object} options - { filters, limit, offset, order, attributes }
      */
     async findAll(options = {}) {
-        const {
-            filters = {},
-            limit = 10,
-            offset = 0,
-            order = [['createdAt', 'DESC']],
-            attributes = null,
-        } = options;
-
-        return User.findAndCountAll({
-            where: filters,
-            limit,
-            offset,
-            order,
-            attributes,
-        });
+        const { filters = {}, limit = 10, offset = 0, order = [['created_at', 'DESC']], attributes = null } = options;
+        try {
+            return await User.findAll({
+                where: filters,
+                limit,
+                offset,
+                order,
+                attributes,
+            });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 
     /**
      * Soft delete a user
      */
     async delete(id, transaction = null) {
-        const user = await User.findByPk(id);
-        if (!user) return null;
+        try {
+            const user = await User.findByPk(id);
+            if (!user) return null;
 
-        return user.destroy({ transaction });
+            return await user.destroy({ transaction });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
     }
 }
 

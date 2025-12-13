@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import commonUtils from '../../common-utils/index.js';
 
 const { tokenConfig } = commonUtils;

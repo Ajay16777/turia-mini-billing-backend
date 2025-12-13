@@ -41,8 +41,20 @@ class APIError extends BaseError {
  * Validation error
  */
 class ValidationError extends APIError {
-    constructor(description = 'Validation error') {
-        super('ValidationError', HttpStatusCode.BAD_REQUEST, description, true);
+    constructor(errors = [], description = 'Validation error') {
+        const normalizedErrors = Array.isArray(errors)
+            ? errors
+            : [{ message: errors }];
+
+        super(
+            'ValidationError',
+            HttpStatusCode.BAD_REQUEST,
+            description,
+            normalizedErrors,
+            true
+        );
+
+        this.errors = normalizedErrors;
     }
 }
 
@@ -50,8 +62,18 @@ class ValidationError extends APIError {
  * Internal server error
  */
 class InternalServerError extends APIError {
-    constructor(description = 'Internal server error') {
-        super('InternalServerError', HttpStatusCode.INTERNAL_SERVER, description, false);
+    constructor(error, description = 'Internal server error') {
+        if (error instanceof Error) {
+            description = error.message;
+        }
+
+        super(
+            'InternalServerError',
+            HttpStatusCode.INTERNAL_SERVER,
+            description,
+            error,
+            false
+        );
     }
 }
 
@@ -114,14 +136,20 @@ class ErrorHandler {
     async handleError(err, req, res) {
         const normalizedError = this.normalizeError(err);
 
-        logger.error(
-            {
-                err: normalizedError.originalError,
-                tags: ['central-error-handler'],
-            },
-            normalizedError.message
-        );
+        // Prepare request details for logging
+        const reqDetails = {
+            url: req.originalUrl,
+            method: req.method,
+            body: req.body,
+            params: req.params,
+            query: req.query,
+            headers: req.headers,
+        };
 
+        // Log the error using the central logger
+        logger.error(reqDetails, normalizedError.message, normalizedError);
+
+        // Send response
         res.status(normalizedError.httpCode).json({
             success: false,
             type: normalizedError.type,
