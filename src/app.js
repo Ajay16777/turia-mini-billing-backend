@@ -4,6 +4,7 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 import commonUtils from './common-utils/index.js';
 import { authRoutes, customerRoutes, invoiceRoutes } from './routes/index.js';
+import { startAllCrons } from './cron/index.js';
 
 dotenv.config(); // Load environment variables
 
@@ -83,6 +84,7 @@ class MyApp {
      * Start server
      */
     startServer() {
+        startAllCrons(); // automatically picks schedules from config.CRONS
         const port = process.env.PORT || 8000;
         this.app.listen(port, () => {
             logger.info(`Server is running on port ${port}`);

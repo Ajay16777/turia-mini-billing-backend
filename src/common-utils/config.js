@@ -53,6 +53,15 @@ const tokenConfig = {
     JWT_EXPIRES_IN: process.env.JWT_EXPIRY || '1d',
 };
 
+/* ---------------------------- CRONS CONFIG -------------------------- */
+const cronConfig = {
+    invoiceOverdueCron: process.env.CRON_INVOICE_OVERDUE || '*/1 * * * *', // every 1 minute
+    // dailyReportCron: process.env.CRON_DAILY_REPORT || '0 6 * * *',         // 6 AM daily
+    // emailReminderCron: process.env.CRON_EMAIL_REMINDER || '0 */4 * * *',   // every 4 hours
+    // // Add more cron jobs here
+};
+
+
 /* ----------------------------- EXPORTS ----------------------------- */
 export {
     generalConfig,
@@ -61,4 +70,5 @@ export {
     postgreSQLConfig,
     additionalConfig,
     tokenConfig,
+    cronConfig,
 };

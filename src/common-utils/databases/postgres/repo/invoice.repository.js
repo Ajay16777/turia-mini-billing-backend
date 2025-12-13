@@ -204,6 +204,37 @@ class InvoiceRepository {
             throw new DatabaseError(error);
         }
     }
+
+    /**
+     * Bulk update invoice status based on filters
+     * @param {Object} params
+     * @param {Object} params.filters - e.g. { status: 'PENDING', created_at_lt: Date }
+     * @param {string} params.status - new status to set
+     * @returns {Array} updated invoices
+     */
+    async bulkUpdateStatus({ filters = {}, status }) {
+        const where = {};
+
+        if (filters.status) {
+            where.status = filters.status;
+        }
+
+        if (filters.created_at_lt) {
+            where.created_at = { [Op.lt]: filters.created_at_lt };
+        }
+
+        // Perform update and return affected rows
+        const [updatedCount, updatedRows] = await Invoice.update(
+            { status },
+            {
+                where,
+                returning: true, // returns updated rows in Postgres
+            }
+        );
+
+        return updatedRows; // array of updated invoice instances
+    }
+
 }
 
 export default new InvoiceRepository();
