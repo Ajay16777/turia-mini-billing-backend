@@ -36,7 +36,7 @@ import { ValidationError } from './errorHandler.js';
 const validateWithJoi = (schema, payload) => {
     const { error, value } = schema.validate(payload, {
         abortEarly: false, // collect all errors
-        stripUnknown: true, // remove unknown fields
+        stripUnknown: false, // remove unknown fields
     });
 
     if (error) {

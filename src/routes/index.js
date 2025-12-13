@@ -1,7 +1,7 @@
-// import { invoiceRoutes } from './invoice.routes.js';
+import { customerRoutes } from './customer.routes.js';
 import { authRoutes } from './auth.routes.js';
 
 export {
-    // invoiceRoutes,
+    customerRoutes,
     authRoutes,
 }

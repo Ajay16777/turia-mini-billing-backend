@@ -143,7 +143,7 @@ class ErrorHandler {
             body: req.body,
             params: req.params,
             query: req.query,
-            headers: req.headers,
+            // headers: req.headers,
         };
 
         // Log the error using the central logger

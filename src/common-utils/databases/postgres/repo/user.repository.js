@@ -1,3 +1,4 @@
+import { Op } from 'sequelize';
 import User from '../models/user.model.js';
 import { DatabaseError } from '../../../errorHandler.js';
 
@@ -76,6 +77,23 @@ class UserRepository {
             if (!user) return null;
 
             return await user.destroy({ transaction });
+        } catch (error) {
+            throw new DatabaseError(error);
+        }
+    }
+
+    /**
+     * Find user by email or phone
+     */
+    async findByEmailOrPhone(email, phone) {
+        try {
+            const whereClause = {
+                [Op.or]: [
+                    { email },
+                    phone ? { phone } : null,
+                ].filter(Boolean),
+            };
+            return await User.findOne({ where: whereClause });
         } catch (error) {
             throw new DatabaseError(error);
         }
