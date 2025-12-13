@@ -1,4 +1,4 @@
-import { postgreSQLConfig as config } from '../../config';
+import { postgreSQLConfig as config } from '../../config.js';
 
 const {
 	POSTGRES_DB,

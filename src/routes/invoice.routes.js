@@ -4,13 +4,12 @@ const { auth, constants } = commonUtils;
 import {
     createInvoiceController,
     getInvoicesController,
-    getInvoiceController,
     updateInvoiceStatusController
 } from '../controllers/invoice.controller.js';
 
 const router = express.Router();
 const { authorize, authenticate } = auth;
-const { AMDIN, CUSTOMER } = constants.ROLES;
+const { ADMIN, CUSTOMER } = constants.ROLES;
 
 /**
  * Define and configure invoice management routes for the application.
@@ -20,9 +19,12 @@ export const invoiceRoutes = (app) => {
     // Mount router under /v0/invoices
     app.use('/v0/invoices', router);
 
-    // Routes
-    router.post('/', authenticate, authorize([AMDIN]), createInvoiceController);
-    router.get('/', authenticate, getInvoicesController);
-    router.get('/:id', authenticate, getInvoiceController);
-    router.patch('/:id/status', authenticate, authorize([AMDIN]), updateInvoiceStatusController);
+    // Create invoice → only admin
+    router.post('/create', authenticate, authorize([ADMIN]), createInvoiceController);
+
+    // Get invoices → admin sees all, customer sees their own
+    router.post('/get', authenticate, getInvoicesController);
+
+    // Update invoice status → only admin
+    router.post('/update', authenticate, authorize([ADMIN]), updateInvoiceStatusController);
 };
