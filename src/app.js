@@ -40,7 +40,6 @@ class MyApp {
             await PostgreSQLConnection.connect();
             logger.info('Database connection established');
         } catch (error) {
-            console.log("🚀 ~ MyApp ~ setupDbConnection ~ error:", error)
             logger.error({}, 'Database connection failed', {
                 err: error,
                 tags: ['db'],

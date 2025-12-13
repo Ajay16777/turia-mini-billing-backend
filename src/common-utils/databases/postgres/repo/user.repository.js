@@ -31,7 +31,6 @@ class UserRepository {
      * Find a single user by conditions
      */
     async findOne(where = {}, attributes = null) {
-        console.log("🚀 ~ UserRepository ~ findOne ~ where:", where)
         try {
             return await User.findOne({ where, attributes });
         } catch (error) {

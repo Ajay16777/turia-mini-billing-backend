@@ -40,7 +40,6 @@ const validateWithJoi = (schema, payload) => {
     });
 
     if (error) {
-        console.log("🚀 ~ validateWithJoi ~ error:", error)
         const errors = error.details.map((detail) => ({
             field: detail.path.join('.'),
             message: detail.message,
