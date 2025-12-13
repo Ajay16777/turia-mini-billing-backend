@@ -1,0 +1,297 @@
+{
+	"info": {
+		"name": "Mini Billing - Complete APIs",
+		"description": "Postman collection for Customer Management and Invoice APIs for Turia Mini Billing Backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "18737615"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Login Admin",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/auth/login",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Customer Management",
+			"item": [
+				{
+					"name": "Create Customer",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"9876543210\",\n  \"password\": \"Password123\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/customers",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch All Customers",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"john.doe@example.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/customers",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"customers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Fetch Single Customer",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/v0/customers/profile",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"customers",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Invoice Management",
+			"item": [
+				{
+					"name": "Create Invoice",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_id\": \"{{CUSTOMER_ID}}\",\n  \"gst_percentage\": 18,\n  \"items\": [\n    {\"description\": \"Service A\", \"amount\": 1000},\n    {\"description\": \"Service B\", \"amount\": 500}\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/invoices/create",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"invoices",
+								"create"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Invoices",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_id\": \"{{CUSTOMER_ID}}\",\n  \"status\": \"PENDING\",\n  \"from_date\": \"2025-01-01\",\n  \"to_date\": \"2025-12-31\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/invoices/get",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"invoices",
+								"get"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Invoice Status",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{ADMIN_TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"invoice_id\": \"{{INVOICE_ID}}\",\n  \"status\": \"PAID\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/v0/invoices/update",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"v0",
+								"invoices",
+								"update"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "BASE_URL",
+			"value": "http://localhost:8000"
+		},
+		{
+			"key": "ADMIN_TOKEN",
+			"value": ""
+		},
+		{
+			"key": "TOKEN",
+			"value": ""
+		},
+		{
+			"key": "CUSTOMER_ID",
+			"value": ""
+		},
+		{
+			"key": "INVOICE_ID",
+			"value": ""
+		}
+	]
+}
