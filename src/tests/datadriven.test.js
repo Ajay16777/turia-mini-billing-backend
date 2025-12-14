@@ -1,6 +1,6 @@
 // ============================================
 // tests/datadriven.test.js
-// Main test file
+// Main test file (Safe & data-driven)
 // ============================================
 
 import MyApp from '../app.js';
@@ -15,9 +15,7 @@ describe('Data-Driven API Tests', () => {
 
     beforeAll(async () => {
         process.env.NODE_ENV = 'test';
-
         app = await myApp.init({});
-
         testRunner = new TestRunner(app);
     });
 
@@ -25,67 +23,29 @@ describe('Data-Driven API Tests', () => {
         await myApp.close();
     });
 
-
     describe('Health Check', () => {
         it('should return OK for health check', async () => {
             const response = await request(app).get('/api/healthchecker');
-
             expect(response.status).toBe(200);
             expect(response.text).toBe('OK');
         });
     });
 
-    describe('Authentication Tests', () => {
-        it('should run all authentication scenarios', async () => {
-            const results = await testRunner.runCategory(
-                'authentication',
-                testScenarios
-            );
+    const runScenarioCategory = (category) => {
+        describe(`${category.charAt(0).toUpperCase() + category.slice(1)} Tests`, () => {
+            it(`should run all ${category} scenarios`, async () => {
+                const results = await testRunner.runCategory(category, testScenarios);
 
-            const failed = results.filter(r => r.status === 'FAILED');
+                const failed = results.filter(r => r.status === 'FAILED');
 
-            if (failed.length > 0) {
-                console.error('Failed tests:', failed);
-                throw new Error(`${failed.length} test(s) failed`);
-            }
+                if (failed.length > 0) {
+                    console.error(`Failed ${category} tests:`, failed);
+                }
 
-            expect(failed.length).toBe(0);
+                expect(failed.length).toBe(0);
+            });
         });
-    });
+    };
 
-    // describe('Customer Management Tests', () => {
-    //     it('should run all customer scenarios', async () => {
-    //         const results = await testRunner.runCategory(
-    //             'customers',
-    //             testScenarios
-    //         );
-
-    //         const failed = results.filter(r => r.status === 'FAILED');
-
-    //         if (failed.length > 0) {
-    //             console.error('Failed tests:', failed);
-    //             throw new Error(`${failed.length} test(s) failed`);
-    //         }
-
-    //         expect(failed.length).toBe(0);
-    //     });
-    // });
-
-    // describe('Invoice Management Tests', () => {
-    //     it('should run all invoice scenarios', async () => {
-    //         const results = await testRunner.runCategory(
-    //             'invoices',
-    //             testScenarios
-    //         );
-
-    //         const failed = results.filter(r => r.status === 'FAILED');
-
-    //         if (failed.length > 0) {
-    //             console.error('Failed tests:', failed);
-    //             throw new Error(`${failed.length} test(s) failed`);
-    //         }
-
-    //         expect(failed.length).toBe(0);
-    //     });
-    // });
+    ['authentication', 'customers', 'invoices'].forEach(runScenarioCategory);
 });

@@ -11,7 +11,7 @@ const createInvoiceController = async (req, res, next) => {
     const data = req.requestDetails.requestBody;
     try {
         const invoice = await invoiceService.createInvoice(data);
-        return rrHandler.sendSuccessResponse(res, invoice, 201);
+        return rrHandler.sendSuccessResponse(res, invoice);
     } catch (err) {
         next(err);
     }

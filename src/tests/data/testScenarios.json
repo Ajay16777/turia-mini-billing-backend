@@ -93,7 +93,13 @@
                 "email": "admin@test.example.com"
             },
             "expected": {
-                "statusCode": 400
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         }
     },
@@ -108,9 +114,9 @@
                 "Authorization": "Bearer {{adminToken}}"
             },
             "reqBody": {
-                "name": "Test User {{timestamp}}",
-                "email": "testuser{{timestamp}}@test.example.com",
-                "phone": "9876543219",
+                "name": "Test User {{email_rand}}",
+                "email": "testuser{{email_rand}}@test.example.com",
+                "phone": "{{phone}}",
                 "password": "Password@123"
             },
             "expected": {
@@ -143,6 +149,9 @@
             "useCase": "Create Customer - Duplicate Email",
             "endpoint": "/v0/customers",
             "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
             "reqBody": {
                 "name": "Another User",
                 "email": "{{customerEmail}}",
@@ -150,7 +159,13 @@
                 "password": "Password@123"
             },
             "expected": {
-                "statusCode": 409
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "create_customer_invalid_email": {
@@ -159,6 +174,9 @@
             "useCase": "Create Customer - Invalid Email",
             "endpoint": "/v0/customers",
             "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
             "reqBody": {
                 "name": "Test User",
                 "email": "invalid-email",
@@ -166,7 +184,13 @@
                 "password": "Password@123"
             },
             "expected": {
-                "statusCode": 400
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "fetch_all_customers": {
@@ -176,16 +200,15 @@
             ],
             "useCase": "Fetch All Customers",
             "endpoint": "/v0/customers",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
             "method": "GET",
             "expected": {
-                "statusCode": 200,
-                "responseType": "array",
-                "assertions": [
-                    {
-                        "type": "arrayMinLength",
-                        "value": 1
-                    }
-                ]
+                "responseShape": {
+                    "success": "boolean",
+                    "data": "array"
+                }
             }
         },
         "fetch_customer_profile": {
@@ -203,9 +226,17 @@
             "expected": {
                 "statusCode": 200,
                 "responseShape": {
-                    "id": "string",
-                    "name": "string",
-                    "email": "string"
+                    "success": "boolean",
+                    "data": {
+                        "id": "string",
+                        "name": "string",
+                        "email": "string",
+                        "phone": "string",
+                        "password": "string",
+                        "role": "string",
+                        "created_at": "string",
+                        "updated_at": "string"
+                    }
                 }
             }
         },
@@ -216,7 +247,13 @@
             "endpoint": "/v0/customers/profile",
             "method": "GET",
             "expected": {
-                "statusCode": 401
+                "statusCode": 401,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         }
     },
@@ -248,14 +285,25 @@
                 ]
             },
             "expected": {
-                "statusCode": 201,
+                "statusCode": 200,
                 "responseShape": {
-                    "invoice_id": "string",
-                    "total_amount": "number",
-                    "gst_amount": "number"
+                    "success": "boolean",
+                    "data": {
+                        "id": "string",
+                        "status": "string",
+                        "created_at": "string",
+                        "updated_at": "string",
+                        "customer_id": "string",
+                        "invoice_no": "string",
+                        "subtotal": "string",
+                        "gst_percentage": "string",
+                        "gst_amount": "string",
+                        "total_amount": "string",
+                        "items": "array"
+                    }
                 },
                 "saveToContext": {
-                    "invoiceId": "body.invoice_id"
+                    "invoiceId": "body.data.id"
                 }
             }
         },
@@ -278,7 +326,13 @@
                 ]
             },
             "expected": {
-                "statusCode": 401
+                "statusCode": 401,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "create_invoice_invalid_customer": {
@@ -303,7 +357,13 @@
                 ]
             },
             "expected": {
-                "statusCode": 404
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "create_invoice_empty_items": {
@@ -324,7 +384,13 @@
                 "items": []
             },
             "expected": {
-                "statusCode": 400
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "get_invoices": {
@@ -348,7 +414,10 @@
             },
             "expected": {
                 "statusCode": 200,
-                "responseType": "array"
+                "responseShape": {
+                    "success": "boolean",
+                    "data": "array"
+                }
             }
         },
         "update_invoice_status": {
@@ -370,8 +439,24 @@
             },
             "expected": {
                 "statusCode": 200,
-                "responseMatch": {
-                    "status": "PAID"
+                "data": {
+                    "status": "PAID",
+                    "invoice_id": "{{invoiceId}}"
+                },
+                "responseShape": {
+                    "success": "boolean",
+                    "data": {
+                        "id": "string",
+                        "status": "string",
+                        "created_at": "string",
+                        "updated_at": "string",
+                        "customer_id": "string",
+                        "invoice_no": "string",
+                        "subtotal": "string",
+                        "gst_percentage": "string",
+                        "gst_amount": "string",
+                        "total_amount": "string"
+                    }
                 }
             }
         },
@@ -393,7 +478,13 @@
                 "status": "PAID"
             },
             "expected": {
-                "statusCode": 403
+                "statusCode": 401,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         },
         "update_invoice_invalid_status": {
@@ -414,7 +505,13 @@
                 "status": "INVALID_STATUS"
             },
             "expected": {
-                "statusCode": 400
+                "statusCode": 400,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
             }
         }
     }

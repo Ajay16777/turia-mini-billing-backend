@@ -44,8 +44,12 @@ const createCustomer = async (payload) => {
  */
 const fetchCustomers = async (payload) => {
     // Validate query params
-    const filters = validateFetchUsers(payload);
-
+    validateFetchUsers(payload);
+    const { name, email, phone } = payload
+    const filters = {};
+    if (payload.name) filters.name = payload.name;
+    if (payload.email) filters.email = payload.email;
+    if (payload.phone) filters.phone = payload.phone;
     // Fetch customers
     filters.role = constants.ROLES.CUSTOMER;
     const attributes = ['id', 'name', 'email', 'phone']

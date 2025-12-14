@@ -1,3 +1,4 @@
+import { userRepo } from '../../common-utils/databases/postgres/index.js';
 import commonUtils from '../../common-utils/index.js';
 import errorMessages from '../errorMessages.js';
 import {
@@ -39,6 +40,12 @@ const createInvoice = async (payload) => {
     const validatedData = validateCreateInvoice(payload);
 
     const { customer_id, gst_percentage, items } = validatedData;
+
+    // First IF Customer Id is valid or not
+    const custDetails = await userRepo.findById(customer_id);
+    if (!custDetails) {
+        throw new ValidationError(errorMessages.USER.NOT_FOUND);
+    }
 
     const transaction = await sequelize.transaction();
 

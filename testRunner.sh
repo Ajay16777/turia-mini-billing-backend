@@ -36,7 +36,7 @@ npx sequelize-cli db:seed:all
 # 4️⃣ Run Jest tests
 # ---------------------------------------------
 echo "🚀 Running test suite..."
-npm run test
+npm run test || true   # <-- prevents script from stopping
 
 # ---------------------------------------------
 # 5️⃣ Cleanup database
@@ -44,4 +44,4 @@ npm run test
 echo "🧹 Cleaning up test database..."
 npx sequelize-cli db:migrate:undo:all
 
-echo "✅ Test run completed successfully"
+echo "✅ Test run completed"

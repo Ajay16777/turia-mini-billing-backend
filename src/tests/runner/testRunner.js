@@ -1,10 +1,22 @@
 // ============================================
 // tests/runner/testRunner.js
-// Enhanced test runner with commonUtils integration
+// Safe Test Runner (no uncaught throws)
 // ============================================
 import commonUtils from '../../common-utils/index.js';
 
 const { logger } = commonUtils;
+
+class ValidationResult {
+    constructor() {
+        this.passed = true;
+        this.errors = [];
+    }
+
+    fail(message) {
+        this.passed = false;
+        this.errors.push(message);
+    }
+}
 
 export class TestRunner {
     constructor(app) {
@@ -13,31 +25,58 @@ export class TestRunner {
         this.executedSteps = new Set();
     }
 
-    // Replace placeholders including timestamp
+    // --------------------------------------------
+    // Placeholder replacement (safe, phone regenerated every time)
+    // --------------------------------------------
     replacePlaceholders(obj) {
-        const jsonStr = JSON.stringify(obj);
-        const timestamp = Date.now();
+        try {
+            const jsonStr = JSON.stringify(obj);
 
-        const replaced = jsonStr
-            .replace(/\{\{timestamp\}\}/g, timestamp)
-            .replace(/\{\{(\w+)\}\}/g, (match, key) => {
-                return this.context[key] !== undefined ? this.context[key] : match;
-            });
+            if (!this.context.timestamp) {
+                this.context.timestamp = Date.now();
+            }
 
-        return JSON.parse(replaced);
+            // Generate a new unique 10-digit phone number every time
+            const randPhone = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+            const tsPhone = Date.now().toString().slice(-6);
+            const phone = `9${randPhone}${tsPhone}`;
+
+            // Generate a unique random string for email
+            const randEmail = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+            const replaced = jsonStr
+                .replace(/\{\{phone\}\}/g, phone)
+                .replace(/\{\{email_rand\}\}/g, randEmail)
+                .replace(/\{\{(\w+)\}\}/g, (match, key) => {
+                    return this.context[key] !== undefined && key !== 'phone'
+                        ? this.context[key]
+                        : match;
+                });
+
+            return JSON.parse(replaced);
+        } catch (err) {
+            logger.error({ err }, 'Placeholder replacement failed');
+            return obj; // fail-safe
+        }
     }
 
-    // Get nested value from object
+    // --------------------------------------------
+    // Utils
+    // --------------------------------------------
     getNestedValue(obj, path) {
-        return path.split('.').reduce((current, key) => current?.[key], obj);
+        try {
+            return path.split('.').reduce((curr, key) => curr?.[key], obj);
+        } catch {
+            return undefined;
+        }
     }
 
-    // Execute prerequisite steps
+    // --------------------------------------------
+    // Prerequisites
+    // --------------------------------------------
     async executePrerequisites(steps, allScenarios) {
         for (const stepKey of steps) {
-            if (this.executedSteps.has(stepKey)) {
-                continue;
-            }
+            if (this.executedSteps.has(stepKey)) continue;
 
             let scenario = null;
             for (const category in allScenarios) {
@@ -48,13 +87,11 @@ export class TestRunner {
             }
 
             if (!scenario) {
-                logger.error({}, `Prerequisite step not found: ${stepKey}`, {
-                    tags: ['test-runner'],
-                });
-                throw new Error(`Prerequisite step not found: ${stepKey}`);
+                logger.error(`Prerequisite not found: ${stepKey}`);
+                return; // do not throw
             }
 
-            if (scenario.stepsToRunBeforeThisUseCase?.length > 0) {
+            if (scenario.stepsToRunBeforeThisUseCase?.length) {
                 await this.executePrerequisites(
                     scenario.stepsToRunBeforeThisUseCase,
                     allScenarios
@@ -66,118 +103,148 @@ export class TestRunner {
         }
     }
 
-    // Execute a single scenario
+    // --------------------------------------------
+    // Scenario execution
+    // --------------------------------------------
     async executeScenario(scenario, scenarioKey) {
-        const { endpoint, method, headers = {}, reqBody, expected } = scenario;
+        const result = new ValidationResult();
 
-        logger.info(`Executing scenario: ${scenarioKey}`);
+        try {
+            const { endpoint, method, headers = {}, reqBody, expected } = scenario;
+            logger.info(`Executing scenario: ${scenarioKey}`);
 
-        const processedHeaders = this.replacePlaceholders(headers);
-        const processedBody = reqBody ? this.replacePlaceholders(reqBody) : undefined;
-        const processedEndpoint = this.replacePlaceholders({ e: endpoint }).e;
+            const processedHeaders = this.replacePlaceholders(headers);
+            const processedBody = reqBody
+                ? this.replacePlaceholders(reqBody)
+                : undefined;
+            const processedEndpoint = this.replacePlaceholders({ e: endpoint }).e;
 
-        // Import supertest dynamically
-        const { default: request } = await import('supertest');
-        let req = request(this.app)[method.toLowerCase()](processedEndpoint);
+            const { default: request } = await import('supertest');
+            let req = request(this.app)[method.toLowerCase()](processedEndpoint);
 
-        // Add headers
-        Object.entries(processedHeaders).forEach(([key, value]) => {
-            req = req.set(key, value);
-        });
-
-        // Add body
-        if (processedBody) {
-            req = req.send(processedBody);
-        }
-
-        // Execute request
-        const response = await req;
-
-        // Validate response
-        this.validateResponse(response, expected, scenarioKey);
-
-        // Save to context
-        if (expected.saveToContext) {
-            Object.entries(expected.saveToContext).forEach(([contextKey, value]) => {
-                let resolvedValue;
-
-                // ✅ Case 1: Literal value (explicit)
-                if (typeof value === 'string' && value.startsWith('literal:')) {
-                    resolvedValue = value.replace('literal:', '');
-                }
-
-                // ✅ Case 2: Path-based value (default behavior)
-                else if (typeof value === 'string') {
-                    resolvedValue = this.getNestedValue(response, value);
-                }
-
-                // ✅ Case 3: Non-string literal (number, boolean, null, object)
-                else {
-                    resolvedValue = value;
-                }
-
-                this.context[contextKey] = resolvedValue;
-                logger.info(`Saved to context: ${contextKey} = ${resolvedValue}`);
+            Object.entries(processedHeaders).forEach(([k, v]) => {
+                req = req.set(k, v);
             });
+
+            if (processedBody) req = req.send(processedBody);
+
+            const response = await req;
+
+            this.validateResponse(response, expected, scenarioKey, result);
+
+            if (result.passed && expected?.saveToContext) {
+                this.saveContext(response, expected.saveToContext);
+            }
+        } catch (err) {
+            result.fail(`[${scenarioKey}] Runtime error: ${err.message}`);
         }
 
-        logger.info(`✓ Scenario passed: ${scenarioKey}`);
-        return response;
+        if (!result.passed) {
+            logger.error(`✗ Scenario failed: ${scenarioKey}`, {
+                errors: result.errors,
+            });
+        } else {
+            logger.info(`✓ Scenario passed: ${scenarioKey}`);
+        }
+
+        return result;
     }
 
-    // Validate response
-    validateResponse(response, expected, scenarioKey) {
-        // Status code
+    // --------------------------------------------
+    // Context save (safe)
+    // --------------------------------------------
+    saveContext(response, saveMap) {
+        Object.entries(saveMap).forEach(([key, value]) => {
+            let resolved;
+
+            if (typeof value === 'string' && value.startsWith('literal:')) {
+                resolved = value.replace('literal:', '');
+            } else if (typeof value === 'string') {
+                resolved = this.getNestedValue(response, value);
+            } else {
+                resolved = value;
+            }
+
+            this.context[key] = resolved;
+            logger.info(`Saved to context: ${key} = ${resolved}`);
+        });
+    }
+
+    // --------------------------------------------
+    // Validation (NO THROWS)
+    // --------------------------------------------
+    validateResponse(response, expected, scenarioKey, result) {
+        if (!expected) return;
+
         if (expected.statusCode && response.status !== expected.statusCode) {
-            throw new Error(
+            result.fail(
                 `[${scenarioKey}] Expected status ${expected.statusCode}, got ${response.status}`
             );
         }
 
-        // Response type
         if (expected.responseType === 'array' && !Array.isArray(response.body)) {
-            throw new Error(
-                `[${scenarioKey}] Expected array response, got ${typeof response.body}`
+            result.fail(`[${scenarioKey}] Expected array response`);
+        }
+
+        if (expected.responseShape) {
+            this.validateShape(
+                response.body,
+                expected.responseShape,
+                scenarioKey,
+                result
             );
         }
 
-        // Response shape
-        if (expected.responseShape) {
-            this.validateShape(response.body, expected.responseShape, scenarioKey);
-        }
-
-        // Response match
         if (expected.responseMatch) {
-            Object.entries(expected.responseMatch).forEach(([key, expectedValue]) => {
-                if (response.body[key] !== expectedValue) {
-                    throw new Error(
-                        `[${scenarioKey}] Expected ${key} to be ${expectedValue}, got ${response.body[key]}`
+            Object.entries(expected.responseMatch).forEach(([path, expectedValue]) => {
+                const actualValue = this.getNestedValue(response.body, path);
+
+                // Object / array deep compare
+                if (
+                    typeof expectedValue === 'object' &&
+                    expectedValue !== null
+                ) {
+                    const actualStr = JSON.stringify(actualValue);
+                    const expectedStr = JSON.stringify(expectedValue);
+
+                    if (actualStr !== expectedStr) {
+                        result.fail(
+                            `[${scenarioKey}] Expected ${path}=${expectedStr}, got ${actualStr}`
+                        );
+                    }
+                }
+                // Primitive compare
+                else if (actualValue !== expectedValue) {
+                    result.fail(
+                        `[${scenarioKey}] Expected ${path}=${expectedValue}, got ${actualValue}`
                     );
                 }
             });
         }
 
-        // Custom assertions
         if (expected.assertions) {
-            expected.assertions.forEach((assertion) => {
-                this.runAssertion(response.body, assertion, scenarioKey);
+            expected.assertions.forEach((a) => {
+                this.runAssertion(response.body, a, scenarioKey, result);
             });
         }
     }
 
-    validateShape(obj, shape, scenarioKey, path = '') {
+    validateShape(obj, shape, scenarioKey, result, path = '') {
+        if (typeof obj !== 'object' || obj === null) {
+            result.fail(`[${scenarioKey}] Response body is not an object`);
+            return;
+        }
+
         Object.entries(shape).forEach(([key, expectedType]) => {
             const currentPath = path ? `${path}.${key}` : key;
 
             if (!(key in obj)) {
-                throw new Error(
-                    `[${scenarioKey}] Missing property: ${currentPath}`
-                );
+                result.fail(`[${scenarioKey}] Missing property: ${currentPath}`);
+                return;
             }
 
             const value = obj[key];
 
-            // ✅ Case 1: Primitive / Union type check
             if (typeof expectedType === 'string') {
                 const actualType = value === null
                     ? 'null'
@@ -185,91 +252,62 @@ export class TestRunner {
                         ? 'array'
                         : typeof value;
 
-                const allowedTypes = expectedType.split('|');
-
-                if (!allowedTypes.includes(actualType)) {
-                    throw new Error(
-                        `[${scenarioKey}] Property ${currentPath}: expected ${expectedType}, got ${actualType}`
+                const allowed = expectedType.split('|');
+                if (!allowed.includes(actualType)) {
+                    result.fail(
+                        `[${scenarioKey}] ${currentPath}: expected ${expectedType}, got ${actualType}`
                     );
                 }
-            }
-
-            // ✅ Case 2: Nested object (recursive)
-            else if (typeof expectedType === 'object' && expectedType !== null) {
-                if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-                    throw new Error(
-                        `[${scenarioKey}] Property ${currentPath}: expected object`
-                    );
+            } else if (typeof expectedType === 'object') {
+                if (value === null || typeof value !== 'object') {
+                    result.fail(`[${scenarioKey}] ${currentPath}: expected object`);
+                } else {
+                    this.validateShape(value, expectedType, scenarioKey, result, currentPath);
                 }
-
-                this.validateShape(
-                    value,
-                    expectedType,
-                    scenarioKey,
-                    currentPath
-                );
             }
         });
     }
 
-
-    // Run custom assertions
-    runAssertion(data, assertion, scenarioKey) {
+    runAssertion(data, assertion, scenarioKey, result) {
         switch (assertion.type) {
             case 'arrayMinLength':
                 if (!Array.isArray(data) || data.length < assertion.value) {
-                    throw new Error(
-                        `[${scenarioKey}] Array length ${data.length} < ${assertion.value}`
+                    result.fail(
+                        `[${scenarioKey}] Array length < ${assertion.value}`
                     );
                 }
                 break;
             default:
-                logger.info(`Unknown assertion type: ${assertion.type}`);
+                logger.error({}, `Unknown assertion type: ${assertion.type}`);
         }
     }
 
-    // Run category
+    // --------------------------------------------
+    // Category runner
+    // --------------------------------------------
     async runCategory(categoryName, scenarios) {
         const results = [];
+        const category = scenarios[categoryName];
+        if (!category) return results;
 
-        if (!scenarios[categoryName])
-            return results;
+        for (const [scenarioKey, scenario] of Object.entries(category)) {
+            this.executedSteps.clear();
 
-        // Load all scenarios for prerequisites
-        const allScenarios = scenarios[categoryName];
-
-        for (const [scenarioKey, scenario] of Object.entries(allScenarios)) {
-            try {
-                this.executedSteps.clear();
-
-
-                if (scenario.stepsToRunBeforeThisUseCase?.length > 0) {
-                    await this.executePrerequisites(
-                        scenario.stepsToRunBeforeThisUseCase,
-                        scenarios
-                    );
-                }
-
-                await this.executeScenario(scenario, scenarioKey);
-
-                results.push({
-                    scenarioKey,
-                    status: 'PASSED',
-                    description: scenario.description,
-                });
-            } catch (error) {
-                results.push({
-                    scenarioKey,
-                    status: 'FAILED',
-                    description: scenario.description,
-                    error: error.message,
-                });
-
-                logger.error({}, `✗ Scenario failed: ${scenarioKey}`, {
-                    err: error,
-                    tags: ['test-runner'],
-                });
+            if (scenario.stepsToRunBeforeThisUseCase?.length) {
+                await this.executePrerequisites(
+                    scenario.stepsToRunBeforeThisUseCase,
+                    scenarios
+                );
             }
+
+            const res = await this.executeScenario(scenario, scenarioKey);
+
+            results.push({
+                scenarioKey,
+                status: res.passed ? 'PASSED' : 'FAILED',
+                description: scenario.description,
+                errors: res.errors,
+            });
         }
 
         return results;
