@@ -45,5 +45,24 @@ const connect = async () => {
 	}
 };
 
-export { sequelize, connect };
+/**
+ * Gracefully close PostgreSQL connection
+ * IMPORTANT for Jest / tests
+ */
+const close = async () => {
+	try {
+		if (sequelize) {
+			await sequelize.close();
+			logger.info('PostgreSQL connection closed', tags);
+		}
+	} catch (error) {
+		logger.error(
+			{},
+			`Error while closing PostgreSQL connection: ${error.message}`,
+			{ tags }
+		);
+	}
+};
+
+export { sequelize, connect, close };
 export default sequelize;

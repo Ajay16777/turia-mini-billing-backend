@@ -4,7 +4,6 @@ import cors from 'cors';
 import * as dotenv from 'dotenv';
 import commonUtils from './common-utils/index.js';
 import { authRoutes, customerRoutes, invoiceRoutes } from './routes/index.js';
-import { startAllCrons } from './cron/index.js';
 
 dotenv.config(); // Load environment variables
 
@@ -28,9 +27,11 @@ class MyApp {
     /**
      * Async initializer to wait for DB connection
      */
-    async init() {
-        await this.setupDbConnection();
-        return this;
+    async init({ connectDb = true } = {}) {
+        if (connectDb) {
+            await this.setupDbConnection();
+        }
+        return this.app;
     }
 
     /**
@@ -80,42 +81,10 @@ class MyApp {
         });
     }
 
-    /**
-     * Start server
-     */
-    startServer() {
-        startAllCrons(); // automatically picks schedules from config.CRONS
-        const port = process.env.PORT || 8000;
-        this.app.listen(port, () => {
-            logger.info(`Server is running on port ${port}`);
-        });
+    async close() {
+        await PostgreSQLConnection.close(); // sequelize.close()
     }
+
 }
 
-// Bootstrapping
-(async () => {
-    const myApp = new MyApp();
-    await myApp.init(); // wait for DB connection
-    myApp.startServer();
-})();
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (reason) => {
-    logger.error({}, 'Unhandled Rejection', {
-        err: reason,
-        tags: ['process'],
-    });
-    process.exit(1);
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-    logger.error({}, 'Uncaught Exception', {
-        err: error,
-        tags: ['process'],
-    });
-
-    if (!errorHandler.isTrustedError(error)) {
-        process.exit(1);
-    }
-});
+export default MyApp;

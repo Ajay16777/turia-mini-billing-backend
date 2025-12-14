@@ -1,0 +1,421 @@
+{
+    "authentication": {
+        "admin_login_success": {
+            "description": "Admin should login successfully with valid credentials",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Admin Login",
+            "endpoint": "/v0/auth/login",
+            "method": "POST",
+            "reqBody": {
+                "email": "admin@example.com",
+                "password": "password123"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseShape": {
+                    "success": "boolean",
+                    "data": {
+                        "accessToken": "string",
+                        "user": {
+                            "id": "string",
+                            "name": "string",
+                            "email": "string",
+                            "phone": "string",
+                            "role": "string"
+                        }
+                    }
+                },
+                "saveToContext": {
+                    "adminToken": "body.data.accessToken",
+                    "adminId": "body.data.user.id"
+                }
+            }
+        },
+        "user_login_success": {
+            "description": "User should login successfully",
+            "stepsToRunBeforeThisUseCase": [
+                "create_customer_success"
+            ],
+            "useCase": "User Login",
+            "endpoint": "/v0/auth/login",
+            "method": "POST",
+            "reqBody": {
+                "email": "{{customerEmail}}",
+                "password": "{{customerPassword}}"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseShape": {
+                    "success": "boolean",
+                    "data": {
+                        "accessToken": "string",
+                        "user": {
+                            "id": "string",
+                            "name": "string",
+                            "email": "string",
+                            "phone": "string",
+                            "role": "string"
+                        }
+                    }
+                },
+                "saveToContext": {
+                    "userToken": "body.data.accessToken"
+                }
+            }
+        },
+        "login_invalid_password": {
+            "description": "Should fail with invalid password",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Login - Invalid Password",
+            "endpoint": "/v0/auth/login",
+            "method": "POST",
+            "reqBody": {
+                "email": "admin@example.com",
+                "password": "wrongpassword"
+            },
+            "expected": {
+                "statusCode": 401,
+                "responseShape": {
+                    "success": "boolean",
+                    "type": "string",
+                    "message": "string",
+                    "errors": "null|array"
+                }
+            }
+        },
+        "login_missing_fields": {
+            "description": "Should fail when required fields are missing",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Login - Missing Fields",
+            "endpoint": "/v0/auth/login",
+            "method": "POST",
+            "reqBody": {
+                "email": "admin@test.example.com"
+            },
+            "expected": {
+                "statusCode": 400
+            }
+        }
+    },
+    "customers": {
+        "create_customer_success": {
+            "description": "Should create customer with valid data",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Create Customer",
+            "endpoint": "/v0/customers",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "name": "Test User {{timestamp}}",
+                "email": "testuser{{timestamp}}@test.example.com",
+                "phone": "9876543219",
+                "password": "Password@123"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseShape": {
+                    "success": "boolean",
+                    "data": {
+                        "id": "string",
+                        "name": "string",
+                        "email": "string",
+                        "phone": "string",
+                        "password": "string",
+                        "role": "string",
+                        "created_at": "string",
+                        "updated_at": "string"
+                    }
+                },
+                "saveToContext": {
+                    "customerId": "body.data.id",
+                    "customerEmail": "body.data.email",
+                    "customerPassword": "literal:Password@123"
+                }
+            }
+        },
+        "create_customer_duplicate_email": {
+            "description": "Should fail with duplicate email",
+            "stepsToRunBeforeThisUseCase": [
+                "create_customer_success"
+            ],
+            "useCase": "Create Customer - Duplicate Email",
+            "endpoint": "/v0/customers",
+            "method": "POST",
+            "reqBody": {
+                "name": "Another User",
+                "email": "{{customerEmail}}",
+                "phone": "9876543211",
+                "password": "Password@123"
+            },
+            "expected": {
+                "statusCode": 409
+            }
+        },
+        "create_customer_invalid_email": {
+            "description": "Should fail with invalid email format",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Create Customer - Invalid Email",
+            "endpoint": "/v0/customers",
+            "method": "POST",
+            "reqBody": {
+                "name": "Test User",
+                "email": "invalid-email",
+                "phone": "9876543210",
+                "password": "Password@123"
+            },
+            "expected": {
+                "statusCode": 400
+            }
+        },
+        "fetch_all_customers": {
+            "description": "Should fetch all customers",
+            "stepsToRunBeforeThisUseCase": [
+                "create_customer_success"
+            ],
+            "useCase": "Fetch All Customers",
+            "endpoint": "/v0/customers",
+            "method": "GET",
+            "expected": {
+                "statusCode": 200,
+                "responseType": "array",
+                "assertions": [
+                    {
+                        "type": "arrayMinLength",
+                        "value": 1
+                    }
+                ]
+            }
+        },
+        "fetch_customer_profile": {
+            "description": "Should fetch authenticated customer profile",
+            "stepsToRunBeforeThisUseCase": [
+                "create_customer_success",
+                "user_login_success"
+            ],
+            "useCase": "Fetch Customer Profile",
+            "endpoint": "/v0/customers/profile",
+            "method": "GET",
+            "headers": {
+                "Authorization": "Bearer {{userToken}}"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseShape": {
+                    "id": "string",
+                    "name": "string",
+                    "email": "string"
+                }
+            }
+        },
+        "fetch_profile_unauthorized": {
+            "description": "Should fail without authentication",
+            "stepsToRunBeforeThisUseCase": [],
+            "useCase": "Fetch Profile - Unauthorized",
+            "endpoint": "/v0/customers/profile",
+            "method": "GET",
+            "expected": {
+                "statusCode": 401
+            }
+        }
+    },
+    "invoices": {
+        "create_invoice_success": {
+            "description": "Should create invoice with admin token",
+            "stepsToRunBeforeThisUseCase": [
+                "admin_login_success",
+                "create_customer_success"
+            ],
+            "useCase": "Create Invoice",
+            "endpoint": "/v0/invoices/create",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "customer_id": "{{customerId}}",
+                "gst_percentage": 18,
+                "items": [
+                    {
+                        "description": "Web Development",
+                        "amount": 10000
+                    },
+                    {
+                        "description": "API Integration",
+                        "amount": 5000
+                    }
+                ]
+            },
+            "expected": {
+                "statusCode": 201,
+                "responseShape": {
+                    "invoice_id": "string",
+                    "total_amount": "number",
+                    "gst_amount": "number"
+                },
+                "saveToContext": {
+                    "invoiceId": "body.invoice_id"
+                }
+            }
+        },
+        "create_invoice_unauthorized": {
+            "description": "Should fail without admin token",
+            "stepsToRunBeforeThisUseCase": [
+                "create_customer_success"
+            ],
+            "useCase": "Create Invoice - Unauthorized",
+            "endpoint": "/v0/invoices/create",
+            "method": "POST",
+            "reqBody": {
+                "customer_id": "{{customerId}}",
+                "gst_percentage": 18,
+                "items": [
+                    {
+                        "description": "Service",
+                        "amount": 1000
+                    }
+                ]
+            },
+            "expected": {
+                "statusCode": 401
+            }
+        },
+        "create_invoice_invalid_customer": {
+            "description": "Should fail with non-existent customer",
+            "stepsToRunBeforeThisUseCase": [
+                "admin_login_success"
+            ],
+            "useCase": "Create Invoice - Invalid Customer",
+            "endpoint": "/v0/invoices/create",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "customer_id": "00000000-0000-0000-0000-000000000000",
+                "gst_percentage": 18,
+                "items": [
+                    {
+                        "description": "Service",
+                        "amount": 1000
+                    }
+                ]
+            },
+            "expected": {
+                "statusCode": 404
+            }
+        },
+        "create_invoice_empty_items": {
+            "description": "Should fail with empty items array",
+            "stepsToRunBeforeThisUseCase": [
+                "admin_login_success",
+                "create_customer_success"
+            ],
+            "useCase": "Create Invoice - Empty Items",
+            "endpoint": "/v0/invoices/create",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "customer_id": "{{customerId}}",
+                "gst_percentage": 18,
+                "items": []
+            },
+            "expected": {
+                "statusCode": 400
+            }
+        },
+        "get_invoices": {
+            "description": "Should fetch invoices with filters",
+            "stepsToRunBeforeThisUseCase": [
+                "user_login_success",
+                "create_customer_success",
+                "create_invoice_success"
+            ],
+            "useCase": "Get Invoices",
+            "endpoint": "/v0/invoices/get",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{userToken}}"
+            },
+            "reqBody": {
+                "customer_id": "{{customerId}}",
+                "status": "PENDING",
+                "from_date": "2025-01-01",
+                "to_date": "2025-12-31"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseType": "array"
+            }
+        },
+        "update_invoice_status": {
+            "description": "Should update invoice status with admin token",
+            "stepsToRunBeforeThisUseCase": [
+                "admin_login_success",
+                "create_customer_success",
+                "create_invoice_success"
+            ],
+            "useCase": "Update Invoice Status",
+            "endpoint": "/v0/invoices/update",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "invoice_id": "{{invoiceId}}",
+                "status": "PAID"
+            },
+            "expected": {
+                "statusCode": 200,
+                "responseMatch": {
+                    "status": "PAID"
+                }
+            }
+        },
+        "update_invoice_non_admin": {
+            "description": "Should fail without admin privileges",
+            "stepsToRunBeforeThisUseCase": [
+                "user_login_success",
+                "create_customer_success",
+                "create_invoice_success"
+            ],
+            "useCase": "Update Invoice - Non Admin",
+            "endpoint": "/v0/invoices/update",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{userToken}}"
+            },
+            "reqBody": {
+                "invoice_id": "{{invoiceId}}",
+                "status": "PAID"
+            },
+            "expected": {
+                "statusCode": 403
+            }
+        },
+        "update_invoice_invalid_status": {
+            "description": "Should fail with invalid status value",
+            "stepsToRunBeforeThisUseCase": [
+                "admin_login_success",
+                "create_customer_success",
+                "create_invoice_success"
+            ],
+            "useCase": "Update Invoice - Invalid Status",
+            "endpoint": "/v0/invoices/update",
+            "method": "POST",
+            "headers": {
+                "Authorization": "Bearer {{adminToken}}"
+            },
+            "reqBody": {
+                "invoice_id": "{{invoiceId}}",
+                "status": "INVALID_STATUS"
+            },
+            "expected": {
+                "statusCode": 400
+            }
+        }
+    }
+}
