@@ -25,7 +25,7 @@ A Node.js/Express backend application for managing billing operations with authe
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/Ajay16777/turia-mini-billing-backend.git
 cd turia-mini-billing-backend
 ```
 
